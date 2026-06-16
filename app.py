@@ -70,7 +70,31 @@ def view_project(project_name):
     <ul>
         {clickable_categories(project_name)}
     </ul>
-    <p><a href="/">Back home</a></p>
+    <p><a href="/">Home</a></p>
+    """
+
+@app.route("/projects/<project_name>/<category>")
+def view_category(project_name, category):
+    return f"""
+    <h1>{project_name} / {category}</h1>
+    <h2>Subcategories</h2>
+    <ul>
+        {clickable_subcategories(project_name, category)}
+    </ul>
+    <p><a href="/projects/{project_name}">Back to project</a></p>
+    <p><a href="/">Home</a></p>
+    """
+
+@app.route("/projects/<project_name>/<category>/<subcategory>")
+def view_subcategory(project_name, category, subcategory):
+    return f"""
+    <h1>{project_name} / {category} / {subcategory}</h1>
+    <p>Images go here</p>
+    <ul>
+    
+    </ul>
+    <p><a href="/projects/{project_name}/{category}">Back to category</a></p>
+    <p><a href="/">Home</a></p>
     """
 
 if __name__ == "__main__" :
