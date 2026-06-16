@@ -52,6 +52,20 @@ def clickable_subcategories(project_name, category) :
         string += f'<li><a href="/projects/{project_name}/{category}/{subcategory}">{subcategory}</a></li>\n'
     return string
 
+def get_images(project_name, category, subcategory) :
+    image_path = PROJECTS_DIR / project_name / category / subcategory
+    images = []
+    for item in image_path.iterdir() :
+        if item.is_file() :
+            images.append(item.name)
+    return images
+
+def clickable_images(project_name, category, subcategory) :
+    images = get_images(project_name, category, subcategory)
+    return f"""
+    <p>{images}</p>
+    """
+
 @app.route("/")
 def home() :
     projects = get_projects()
@@ -63,7 +77,7 @@ def home() :
     """
 
 @app.route("/projects/<project_name>")
-def view_project(project_name):
+def view_project(project_name) :
     return f"""
     <h1>{project_name}</h1>
     <h2>Categories</h2>
@@ -74,7 +88,7 @@ def view_project(project_name):
     """
 
 @app.route("/projects/<project_name>/<category>")
-def view_category(project_name, category):
+def view_category(project_name, category) :
     return f"""
     <h1>{project_name} / {category}</h1>
     <h2>Subcategories</h2>
@@ -86,12 +100,11 @@ def view_category(project_name, category):
     """
 
 @app.route("/projects/<project_name>/<category>/<subcategory>")
-def view_subcategory(project_name, category, subcategory):
+def view_subcategory(project_name, category, subcategory) :
     return f"""
     <h1>{project_name} / {category} / {subcategory}</h1>
-    <p>Images go here</p>
     <ul>
-    
+        {clickable_images(project_name, category, subcategory)}
     </ul>
     <p><a href="/projects/{project_name}/{category}">Back to category</a></p>
     <p><a href="/">Home</a></p>
