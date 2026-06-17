@@ -1,4 +1,4 @@
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, request, redirect
 from pathlib import Path
 
 PROJECTS_DIR = Path("projects")
@@ -68,7 +68,9 @@ def clickable_images(project_name, category, subcategory) :
     for image in images :
         string += f"""
             <li>
-                <img src="/files/{project_name}/{category}/{subcategory}/{image}" width="200">
+                <a href="/projects/{project_name}/{category}/{subcategory}/{image}">
+                    <img src="/files/{project_name}/{category}/{subcategory}/{image}" width="200">
+                </a>
                 <p>{image}</p>
             </li>
             """
@@ -85,10 +87,22 @@ def home() :
     projects = get_projects()
     return f"""
         <h1>The Cap Safe</h1>
+        <h2>Projects</h2>
         <ul>
             {clickable_projects()}
         </ul>
+        <form action="/create_project" method="post">
+            <input name="project_name" placeholder="New project name">
+            <button type="submit">Create Project</button>
+        </form>
         """
+
+@app.route("/create_project", methods=["POST"])
+def create_project() :
+    project_name = request.form["project_name"]
+    project_path = PROJECTS_DIR / project_name
+    project_path.mkdir(exist_ok=True)
+    return redirect("/")
 
 @app.route("/projects/<project_name>")
 def view_project(project_name) :
@@ -98,8 +112,19 @@ def view_project(project_name) :
         <ul>
             {clickable_categories(project_name)}
         </ul>
+        <form action="/create_category/{project_name}" method="post">
+            <input name="category_name" placeholder="New category name">
+            <button type="submit">Create Category</button>
+        </form>
         <p><a href="/">Home</a></p>
         """
+
+@app.route("/create_category/<project_name>", methods=["POST"])
+def create_category(project_name) :
+    category_name = request.form["category_name"]
+    category_path = PROJECTS_DIR / project_name / category_name
+    category_path.mkdir(exist_ok=True)
+    return redirect(f"/projects/{project_name}")
 
 @app.route("/projects/<project_name>/<category>")
 def view_category(project_name, category) :
@@ -109,9 +134,20 @@ def view_category(project_name, category) :
         <ul>
             {clickable_subcategories(project_name, category)}
         </ul>
+        <form action="/create_subcategory/{project_name}/{category}" method="post">
+            <input name="subcategory_name" placeholder="New subcategory name">
+            <button type="submit">Create Subcategory</button>
+        </form>
         <p><a href="/projects/{project_name}">Back to project</a></p>
         <p><a href="/">Home</a></p>
         """
+
+@app.route("/create_subcategory/<project_name>/<category>", methods=["POST"])
+def create_subcategory(project_name, category) :
+    subcategory_name = request.form["subcategory_name"]
+    subcategory_path = PROJECTS_DIR / project_name / category / subcategory_name
+    subcategory_path.mkdir(exist_ok=True)
+    return redirect(f"/projects/{project_name}/{category}")
 
 @app.route("/projects/<project_name>/<category>/<subcategory>")
 def view_subcategory(project_name, category, subcategory) :
@@ -121,6 +157,17 @@ def view_subcategory(project_name, category, subcategory) :
             {clickable_images(project_name, category, subcategory)}
         </ul>
         <p><a href="/projects/{project_name}/{category}">Back to category</a></p>
+        <p><a href="/">Home</a></p>
+        """
+
+@app.route("/projects/<project_name>/<category>/<subcategory>/<image>")
+def view_image(project_name, category, subcategory, image) :
+    return f"""
+        <h1>{image}</h1>
+        <a href="/projects/{project_name}/{category}/{subcategory}">
+            <img src="/files/{project_name}/{category}/{subcategory}/{image}" style="max-width: 95%; height: auto;">
+        </a>
+        <p><a href="/projects/{project_name}/{category}/{subcategory}">Back to thumbnails</a></p>
         <p><a href="/">Home</a></p>
         """
 
