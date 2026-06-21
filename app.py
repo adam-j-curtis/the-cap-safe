@@ -146,14 +146,13 @@ def create_project() :
 def view_project(project_name) :
     return f"""
         <h1>{project_name}</h1>
-        <p><a href="/">Home</a></p>
         <h2>Primary Category Folders</h2>
         <ul>
-            {clickable_categories(project_name)}
+            {clickable_folders(project_name)}
         </ul>
-        <form action="/create_category/{project_name}" method="post">
-            <input name="category_name" placeholder="New category name">
-            <button type="submit">Create Category</button>
+        <form action="/create_folder/{project_name}" method="post">
+            <input name="folder_name" placeholder="New folder name">
+            <button type="submit">Create Folder</button>
         </form>
         <h2>Folder Census</h2>
         <p>Total images: </p>
@@ -162,39 +161,62 @@ def view_project(project_name) :
         <h2>Caption Census</h2>
         <p>[Caption name]: </p>
         <p>[Percentage of total images]: </p>
+        <h3>Navigate</h3>
+        <p><a href="/">Home</a></p>
         """
         # Folder names compiled into a list, displayed, and tabulated per name.
         # Compile list of captions using all caption files, increment the census count of each caption per occurrence.
 
-@app.route("/create_category/<project_name>", methods=["POST"])
-def create_category(project_name) :
-    category_name = request.form["category_name"]
-    category_path = PROJECTS_DIR / project_name / category_name
-    category_path.mkdir(exist_ok=True)
+@app.route("/create_folder/<project_name>", methods=["POST"])
+def create_top_folder(project_name) :
+    folder_name = request.form["folder_name"]
+    new_folder_path = PROJECTS_DIR / project_name / folder_name
+    new_folder_path.mkdir(exist_ok=True)
     return redirect(f"/projects/{project_name}")
 
+@app.route("/create_folder/<project_name>/<path:folder_path>", methods=["POST"])
+def create_folder(project_name, folder_path="") :
+    folder_name = request.form["folder_name"]
+    new_folder_path = PROJECTS_DIR / project_name / folder_path / folder_name
+    new_folder_path.mkdir(exist_ok=True)
+    return redirect(f"/projects/{project_name}/{folder_path}")
+
 @app.route("/projects/<project_name>/<path:folder_path>")
-def view_category(project_name, category) :
+def view_folder(project_name, folder_path) :
+    
+    images = get_images(project_name, folder_path)
+    if images :
+        image_section = f"""
+            <h2>Images</h2>
+            <ul>
+                {clickable_images(project_name, folder_path)}
+            </ul>
+        """
+    else :
+        image_section = ""
+    
     return f"""
-        <h1>{project_name} / {category}</h1>
-        <h2>Subcategories</h2>
+        <h1>{project_name} / {folder_path}</h1>
+        <h2>Subfolders</h2>
         <ul>
-            {clickable_subcategories(project_name, category)}
+            {clickable_folders(project_name, folder_path)}
         </ul>
-        <form action="/create_subcategory/{project_name}/{category}" method="post">
-            <input name="subcategory_name" placeholder="New subcategory name">
-            <button type="submit">Create Subcategory</button>
+        {image_section}
+        <form action="/create_folder/{project_name}/{folder_path}" method="post">
+            <input name="folder_name" placeholder="New folder name">
+            <button type="submit">Create Folder</button>
         </form>
         <p><a href="/projects/{project_name}">Back to project</a></p>
         <p><a href="/">Home</a></p>
         """
+        # Add back-one-level link
 
-@app.route("/create_subcategory/<project_name>/<category>", methods=["POST"])
-def create_subcategory(project_name, category) :
-    subcategory_name = request.form["subcategory_name"]
-    subcategory_path = PROJECTS_DIR / project_name / category / subcategory_name
-    subcategory_path.mkdir(exist_ok=True)
-    return redirect(f"/projects/{project_name}/{category}")
+# @app.route("/create_subcategory/<project_name>/<category>", methods=["POST"])
+# def create_subcategory(project_name, category) :
+#     subcategory_name = request.form["subcategory_name"]
+#     subcategory_path = PROJECTS_DIR / project_name / category / subcategory_name
+#     subcategory_path.mkdir(exist_ok=True)
+#     return redirect(f"/projects/{project_name}/{category}")
 
 # @app.route("/projects/<project_name>/<category>/<subcategory>")
 # def view_subcategory(project_name, category, subcategory) :
@@ -207,16 +229,16 @@ def create_subcategory(project_name, category) :
 #         <p><a href="/">Home</a></p>
 #         """
 
-@app.route("/projects/<project_name>/<category>/<subcategory>/<image>")
-def view_image(project_name, category, subcategory, image) :
-    return f"""
-        <h1>{image}</h1>
-        <a href="/projects/{project_name}/{category}/{subcategory}">
-            <img src="/files/{project_name}/{category}/{subcategory}/{image}" style="max-width: 95%; height: auto;">
-        </a>
-        <p><a href="/projects/{project_name}/{category}/{subcategory}">Back to thumbnails</a></p>
-        <p><a href="/">Home</a></p>
-        """
+# @app.route("/projects/<project_name>/<folder_path>/<image>")
+# def view_image(project_name, folder_path, image) :
+#     return f"""
+#         <h1>{image}</h1>
+#         <a href="/projects/{project_name}/{folder_path}">
+#             <img src="/files/{project_name}/{folder_path}/{image}" style="max-width: 95%; height: auto;">
+#         </a>
+#         <p><a href="/projects/{project_name}/{folder_path}">Back to thumbnails</a></p>
+#         <p><a href="/">Home</a></p>
+#         """
 
 # Run
 
