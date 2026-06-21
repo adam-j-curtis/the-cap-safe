@@ -66,7 +66,7 @@ def get_images(project_name, folder_path="") :
     image_path = PROJECTS_DIR / project_name / folder_path
     images = []
     for item in image_path.iterdir() :
-        if item.is_file() :
+        if item.is_file() and item.suffix.lower() in IMAGE_EXTENSIONS :
             images.append(item.name)
     return images
 
@@ -137,6 +137,7 @@ def view_project(project_name) :
         warning = ""
     return f"""
         <h1>{project_name}</h1>
+        <p><a href="/">Home</a></p>
         <h2>Primary Category Folders</h2>
             {warning}
         <ul>
@@ -152,9 +153,7 @@ def view_project(project_name) :
         <p>[Folder names]: </p>
         <h2>Caption Census</h2>
         <p>[Caption name]: </p>
-        <p>[Percentage of total images]: </p>
-        <h3>Navigate</h3>
-        <p><a href="/">Home</a></p>
+        <p>[Percentage of total images]: </p>        
         """
         # Folder names compiled into a list, displayed, and tabulated per name.
         # Compile list of captions using all caption files, increment the census count of each caption per occurrence.
@@ -174,17 +173,17 @@ def create_folder(project_name, folder_path="") :
     return redirect(f"/projects/{project_name}/{folder_path}")
 
 @app.route("/projects/<project_name>/<path:folder_path>")
+
 def view_folder(project_name, folder_path) :
+        
     path = f"<h1>{project_name} / {folder_path}</h1>"
     folder_section = f"""
-        {path}
         <h2>Subfolders</h2>
         <ul>
             {clickable_folders(project_name, folder_path)}
         </ul>
         """
     image_section = f"""
-        {path}
         <h2>Images</h2>
         <ul>
             {clickable_images(project_name, folder_path)}
@@ -196,40 +195,52 @@ def view_folder(project_name, folder_path) :
         <button type="submit">Create Folder</button>
         </form>
         """
+    path_object = Path(folder_path)
+    if path_object.parent == Path(".") :
+        back_one_link = f"""
+            <p><a href="/projects/{project_name}">Back one step</a></p>
+            """
+    else :
+        back_one_link = f"""
+            <p><a href="/projects/{project_name}/{path_object.parent}">Back one step</a></p>
+            """
     links = f"""
+        {back_one_link}
         <p><a href=\"/projects/{project_name}\">Back to project</a></p>
         <p><a href=\"/\">Home</a></p>
         """
-        # Add a back-one link
 
     state = get_folder_state(project_name, folder_path)    
     if state == "empty" :
         return f"""
             {path}
+            {links}
             <h2>This folder is empty.</h2>
             {folder_creation}
-            {links}
         """
         # Allow image adding later, which will turn off folder creation
     elif state == "branch" :
         return f"""
+            {path}
+            {links}
             {folder_section}
             {folder_creation}
-            {links}
             """
     elif state == "leaf" :
         return f"""
-            {image_section}
+            {path}
             {links}
+            {image_section}
             """
     elif state == "mixed" :
         return f"""
+            {path}
+            {links}
             <h3>Warning: This folder contains both subfolders and non-folders, which can cause unexpected app behavior.</h3>
             <p>Please move all non-folder files to a leaf folder or empty folder in the project; or move all folders to an empty or branch folder in the project.</p>
             {folder_section}
             {image_section}
             {folder_creation}
-            {links}
             """
 
 @app.route("/image/<project_name>/<path:image_path>")
