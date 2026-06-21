@@ -62,36 +62,6 @@ def clickable_folders(project_name, folder_path="") :
         string += f'<li><a href="/projects/{project_name}/{link_path}">{folder}</a></li>\n'
     return string
 
-# def get_categories(project_name) :
-#     project_path = PROJECTS_DIR / project_name
-#     categories = []
-#     for item in project_path.iterdir() :
-#         if item.is_dir() :
-#             categories.append(item.name)
-#     return categories
-
-# def clickable_categories(project_name) :
-#     categories = get_categories(project_name)
-#     string = ""
-#     for category in categories :
-#         string += f'<li><a href="/projects/{project_name}/{category}">{category}</a></li>\n'
-#     return string
-
-# def get_subcategories(project_name, category) :
-#     category_path = PROJECTS_DIR / project_name / category
-#     subcategories = []
-#     for item in category_path.iterdir() :
-#         if item.is_dir() :
-#             subcategories.append(item.name)
-#     return subcategories
-
-# def clickable_subcategories(project_name, category) :
-#     subcategories = get_subcategories(project_name, category)
-#     string = ""
-#     for subcategory in subcategories :
-#         string += f'<li><a href="/projects/{project_name}/{category}/{subcategory}">{subcategory}</a></li>\n'
-#     return string
-
 def get_images(project_name, folder_path="") :
     image_path = PROJECTS_DIR / project_name / folder_path
     images = []
@@ -115,6 +85,18 @@ def clickable_images(project_name, folder_path="") :
             """
     return string
 
+def get_folder_state(project_name, folder_path="") :
+    folders = get_folders(project_name, folder_path)
+    images = get_images(project_name, folder_path)
+    if folders and images :
+        return "mixed"
+    elif folders :
+        return "branch"
+    elif images :
+        return "leaf"
+    else :
+        return "empty"
+    
 # Routes
 
 @app.route("/files/<path:filename>")
@@ -145,9 +127,18 @@ def create_project() :
 
 @app.route("/projects/<project_name>")
 def view_project(project_name) :
+    state = get_folder_state(project_name)
+    if state == "mixed" :
+        warning = """
+            <h3>Warning: This folder contains both subfolders and non-folders, which can cause unexpected app behavior.</h3>
+            <p>Please move all non-folder files to a leaf folder or empty folder in the project; or move all folders to an empty or branch folder in the project.</p>
+            """
+    else :
+        warning = ""
     return f"""
         <h1>{project_name}</h1>
         <h2>Primary Category Folders</h2>
+            {warning}
         <ul>
             {clickable_folders(project_name)}
         </ul>
@@ -184,56 +175,62 @@ def create_folder(project_name, folder_path="") :
 
 @app.route("/projects/<project_name>/<path:folder_path>")
 def view_folder(project_name, folder_path) :
-    
-    images = get_images(project_name, folder_path)
-    if images :
-        image_section = f"""
-            <h2>Images</h2>
-            <ul>
-                {clickable_images(project_name, folder_path)}
-            </ul>
-        """
-        folder_creation = ""
-        
-    else :
-        image_section = ""
-        folder_creation = """
-            <form action="/create_folder/{project_name}/{folder_path}" method="post"> 
-            <input name="folder_name" placeholder="New folder name">
-            <button type="submit">Create Folder</button>
-            </form>
-            """
-    
-    return f"""
-        <h1>{project_name} / {folder_path}</h1>
+    path = f"<h1>{project_name} / {folder_path}</h1>"
+    folder_section = f"""
+        {path}
         <h2>Subfolders</h2>
         <ul>
             {clickable_folders(project_name, folder_path)}
         </ul>
-        {image_section}
-        {folder_creation}
-        <p><a href="/projects/{project_name}">Back to project</a></p>
-        <p><a href="/">Home</a></p>
         """
-        # Add back-one-level link
+    image_section = f"""
+        {path}
+        <h2>Images</h2>
+        <ul>
+            {clickable_images(project_name, folder_path)}
+        </ul>
+        """
+    folder_creation = f"""
+        <form action="/create_folder/{project_name}/{folder_path}" method="post"> 
+        <input name="folder_name" placeholder="New folder name">
+        <button type="submit">Create Folder</button>
+        </form>
+        """
+    links = f"""
+        <p><a href=\"/projects/{project_name}\">Back to project</a></p>
+        <p><a href=\"/\">Home</a></p>
+        """
+        # Add a back-one link
 
-# @app.route("/create_subcategory/<project_name>/<category>", methods=["POST"])
-# def create_subcategory(project_name, category) :
-#     subcategory_name = request.form["subcategory_name"]
-#     subcategory_path = PROJECTS_DIR / project_name / category / subcategory_name
-#     subcategory_path.mkdir(exist_ok=True)
-#     return redirect(f"/projects/{project_name}/{category}")
-
-# @app.route("/projects/<project_name>/<category>/<subcategory>")
-# def view_subcategory(project_name, category, subcategory) :
-#     return f"""
-#         <h1>{project_name} / {category} / {subcategory}</h1>
-#         <ul>
-#             {clickable_images(project_name, category, subcategory)}
-#         </ul>
-#         <p><a href="/projects/{project_name}/{category}">Back to category</a></p>
-#         <p><a href="/">Home</a></p>
-#         """
+    state = get_folder_state(project_name, folder_path)    
+    if state == "empty" :
+        return f"""
+            {path}
+            <h2>This folder is empty.</h2>
+            {folder_creation}
+            {links}
+        """
+        # Allow image adding later, which will turn off folder creation
+    elif state == "branch" :
+        return f"""
+            {folder_section}
+            {folder_creation}
+            {links}
+            """
+    elif state == "leaf" :
+        return f"""
+            {image_section}
+            {links}
+            """
+    elif state == "mixed" :
+        return f"""
+            <h3>Warning: This folder contains both subfolders and non-folders, which can cause unexpected app behavior.</h3>
+            <p>Please move all non-folder files to a leaf folder or empty folder in the project; or move all folders to an empty or branch folder in the project.</p>
+            {folder_section}
+            {image_section}
+            {folder_creation}
+            {links}
+            """
 
 @app.route("/image/<project_name>/<path:image_path>")
 def view_image(project_name, image_path) :
