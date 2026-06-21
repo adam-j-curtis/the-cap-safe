@@ -104,10 +104,11 @@ def clickable_images(project_name, folder_path="") :
     images = get_images(project_name, folder_path)
     string = ""
     for image in images :
+        image_path = f"{folder_path}/{image}"
         string += f"""
             <li>
-                <a href="/projects/{project_name}/{folder_path}/{image}">
-                    <img src="/files/{project_name}/{folder_path}/{image}" width="200">
+                <a href="/image/{project_name}/{image_path}">
+                    <img src="/files/{project_name}/{image_path}" width="200">
                 </a>
                 <p>{image}</p>
             </li>
@@ -192,8 +193,16 @@ def view_folder(project_name, folder_path) :
                 {clickable_images(project_name, folder_path)}
             </ul>
         """
+        folder_creation = ""
+        
     else :
         image_section = ""
+        folder_creation = """
+            <form action="/create_folder/{project_name}/{folder_path}" method="post"> 
+            <input name="folder_name" placeholder="New folder name">
+            <button type="submit">Create Folder</button>
+            </form>
+            """
     
     return f"""
         <h1>{project_name} / {folder_path}</h1>
@@ -202,10 +211,7 @@ def view_folder(project_name, folder_path) :
             {clickable_folders(project_name, folder_path)}
         </ul>
         {image_section}
-        <form action="/create_folder/{project_name}/{folder_path}" method="post">
-            <input name="folder_name" placeholder="New folder name">
-            <button type="submit">Create Folder</button>
-        </form>
+        {folder_creation}
         <p><a href="/projects/{project_name}">Back to project</a></p>
         <p><a href="/">Home</a></p>
         """
@@ -229,16 +235,19 @@ def view_folder(project_name, folder_path) :
 #         <p><a href="/">Home</a></p>
 #         """
 
-# @app.route("/projects/<project_name>/<folder_path>/<image>")
-# def view_image(project_name, folder_path, image) :
-#     return f"""
-#         <h1>{image}</h1>
-#         <a href="/projects/{project_name}/{folder_path}">
-#             <img src="/files/{project_name}/{folder_path}/{image}" style="max-width: 95%; height: auto;">
-#         </a>
-#         <p><a href="/projects/{project_name}/{folder_path}">Back to thumbnails</a></p>
-#         <p><a href="/">Home</a></p>
-#         """
+@app.route("/image/<project_name>/<path:image_path>")
+def view_image(project_name, image_path) :
+    path = Path(image_path)
+    folder_path = path.parent
+    image = path.name
+    return f"""
+        <h1>{image}</h1>
+        <a href="/projects/{project_name}/{folder_path}">
+            <img src="/files/{project_name}/{image_path}" style="max-width: 95%; height: auto;">
+        </a>
+        <p><a href="/projects/{project_name}/{folder_path}">Back to thumbnails</a></p>
+        <p><a href="/">Home</a></p>
+        """
 
 # Run
 
