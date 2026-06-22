@@ -9,24 +9,13 @@ from project_utils import (
     get_images,
     clickable_images,
     get_folder_state,
+    get_census,
+    display_census
 )
 
 print(PROJECTS_DIR.resolve())
 
 app = Flask(__name__)
-
-def get_census(project_name) :
-    project_path = PROJECTS_DIR / project_name
-    file_count = 0
-    image_count = 0
-    caption_file_count = 0
-    pass
-#Split into several fxs?
-
-def display_census(project_name) :
-    pass
-    
-# Routes
 
 @app.route("/files/<path:filename>")
 def files(filename) :
@@ -57,6 +46,7 @@ def create_project() :
 @app.route("/projects/<project_name>")
 def view_project(project_name) :
     state = get_folder_state(project_name)
+    census = get_census(project_name)
     if state == "mixed" :
         warning = """
             <h3>Warning: This folder contains both subfolders and non-folders, which can cause unexpected app behavior.</h3>
@@ -77,14 +67,15 @@ def view_project(project_name) :
             <button type="submit">Create Folder</button>
         </form>
         <h2>Folder Census</h2>
-        <p>Total images: </p>
-        <p>Total caption files: </p>
-        <p>[Folder names]: </p>
+        <p>Total images: {census["image_count"]}</p>
+        <p>Total caption files: {census["caption_file_count"]}</p>
+        <ul>
+            {display_census(census["folder_counts"])}
+        </ul>        
         <h2>Caption Census</h2>
         <p>[Caption name]: </p>
         <p>[Percentage of total images]: </p>        
         """
-        # Folder names compiled into a list, displayed, and tabulated per name.
         # Compile list of captions using all caption files, increment the census count of each caption per occurrence.
 
 @app.route("/create_folder/<project_name>", methods=["POST"])
