@@ -69,9 +69,12 @@ def view_project(project_name) :
         <h2>Folder Census</h2>
         <p>Total images: {census["image_count"]}</p>
         <p>Total caption files: {census["caption_file_count"]}</p>
-        <ul>
-            {display_census(census["folder_counts"])}
-        </ul>        
+        <details>
+            <summary>Show Folder Counts</summary>
+            <ul>
+                {display_census(census["folder_counts"], census["level_image_count"])}
+            </ul>
+        </details>
         <h2>Caption Census</h2>
         <p>[Caption name]: </p>
         <p>[Percentage of total images]: </p>        

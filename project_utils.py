@@ -84,16 +84,23 @@ def get_census(project_name) :
     image_count = 0
     caption_file_count = 0
     folder_counts = {}
+    level_image_count = {}
 
     for item in project_path.rglob("*") :
 
         if item.is_file() and item.suffix.lower() in IMAGE_EXTENSIONS :
             image_count += 1
             relative_folder = item.parent.relative_to(project_path)
-            for folder_name in relative_folder.parts :
-                if folder_name not in folder_counts :
-                    folder_counts[folder_name] = 0
-                folder_counts[folder_name] += 1
+            for level, folder_name in enumerate(relative_folder.parts) :
+                if level not in level_image_count :
+                    level_image_count[level] = 0
+                level_image_count[level] += 1
+                if level not in folder_counts :
+                    folder_counts[level] = {}
+                if folder_name not in folder_counts[level] :
+                    folder_counts[level][folder_name] = 0
+                folder_counts[level][folder_name] += 1
+
         
         elif item.is_file() and item.suffix.lower() == ".txt" :
             caption_file_count += 1
@@ -101,11 +108,18 @@ def get_census(project_name) :
     return {
         "image_count" : image_count,
         "caption_file_count" : caption_file_count,
-        "folder_counts" : folder_counts
+        "folder_counts" : folder_counts,
+        "level_image_count" : level_image_count
     }
 
-def display_census(folder_counts) :
+def display_census(folder_counts, level_image_count) :
     string = ""
-    for folder_name, count in folder_counts.items() :
-        string += f"<li>{folder_name} : {count}</li>"
+    for level in folder_counts :
+        if level == 0 :
+            string += "<h3>Top level:</h3>"
+        else :
+            string += f"<h3>Level {level + 1}:</h3>"
+        for folder_name, count in folder_counts[level].items() :
+            percent = count / level_image_count[level] * 100
+            string += f"<li>{folder_name} : {count} ({percent:.1f}%)</li>"
     return string
